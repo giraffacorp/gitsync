@@ -8,18 +8,32 @@ vars:
   GIT_CLONE_PATH: "/app/repo"
   SSH_DIR: "/root/.ssh"
   DESTINATION_PATH: "/sync"
+  SSH_MOUNT_DIR: "/ssh"
   
 
 tasks:
   default: go-task --list
 
+  ssh-dir:
+    desc: configure ssh directory
+    cmds:
+      - mkdir {{.SSH_DIR}}
+      - chmod 700 {{.SSH_DIR}}
+      - rsync -av {{.SSH_MOUNT_DIR}}/ {{.SSH_DIR}}/
+      - chown -R root:root {{.SSH_DIR}}
+      - chmod -R 600 {{.SSH_DIR}}
+    generates:
+      - "{{.SSH_DIR}}/known_hosts"
+      - "{{.SSH_DIR}}/config"
+    status:
+      - test -d "{{.SSH_DIR}}"
 
-  ssh:
+  ssh-conf:
     desc: configure ssh environment
+    deps: [ssh-dir]
     cmds:
       - ssh-keyscan {{.GIT_HOST}} >> {{.SSH_DIR}}/known_hosts
       - printf "Host {{.GIT_HOST}}\n  IdentityFile {{.SSH_DIR}}/id_git\n" > {{.SSH_DIR}}/config
-      - chmod 600 {{.SSH_DIR}}/config
     generates:
       - "{{.SSH_DIR}}/known_hosts"
       - "{{.SSH_DIR}}/config"
@@ -31,7 +45,7 @@ tasks:
 
   clone:
     desc: initial repository clone
-    deps: [ssh]
+    deps: [ssh-conf]
     cmds:
       - git clone --depth 1 -b {{.GIT_BRANCH}} {{.GIT_REPO_URL}} {{.GIT_CLONE_PATH}}
     status:
@@ -47,7 +61,7 @@ tasks:
     cmds:
       - git -C {{.GIT_CLONE_PATH}} pull origin {{.GIT_BRANCH}}
       - git -C {{.GIT_CLONE_PATH}} reset --hard origin/{{.GIT_BRANCH}}
-      - rsync -vazC {{.GIT_CLONE_PATH}}/{{.GIT_SUBFOLDER_PATH}} {{.DESTINATION_PATH}}
+      - rsync -vazC --delete-after --exclude="*/__pycache__" {{.GIT_CLONE_PATH}}/{{.GIT_SUBFOLDER_PATH}}/ {{.DESTINATION_PATH}}/
     sources:
       - "{{.GIT_CLONE_PATH}}"
     generates:
