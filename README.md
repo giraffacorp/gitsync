@@ -11,7 +11,7 @@ A Docker image that continuously synchronizes a Git repository subtree to a dest
 docker run -d \
   -e GIT_REPO_URL="git@github.com:your/repo.git" \
   -e GIT_SUBFOLDER_PATH="src" \
-  -v $HOME/.ssh/id_rsa:/root/.ssh/id_git:ro \
+  -v $HOME/.ssh:/root/.ssh:ro \
   -v /host/path/to/sync/to:/sync \
   giraffacarp/gitsync
 ```
@@ -27,7 +27,7 @@ services:
       SYNC_INTERVAL: 30
     volumes:
       - data-sync:/sync
-      - $HOME/.ssh/id_rsa:/root/.ssh/id_git
+      - $HOME/.ssh:/root/.ssh:ro
 
 volumes:
   data-sync
@@ -56,8 +56,8 @@ Mount either:
 | `SYNC_INTERVAL`        | Sync interval in seconds             | 10          |
 
 ## Available Commands
-- **sync** Perform single synchronization
-- **watch** Continuous sync (default)
+- `sync` Perform single synchronization
+- `watch` Continuous sync (default)
 
 ## Volumes
 - `/sync`: Destination path for synchronized files
