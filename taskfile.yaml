@@ -13,6 +13,7 @@ vars:
 tasks:
   default: go-task --list
 
+
   ssh:
     desc: configure ssh environment
     cmds:
@@ -46,7 +47,7 @@ tasks:
     cmds:
       - git -C {{.GIT_CLONE_PATH}} pull origin {{.GIT_BRANCH}}
       - git -C {{.GIT_CLONE_PATH}} reset --hard origin/{{.GIT_BRANCH}}
-      - rsync -vazC --delete {{.GIT_CLONE_PATH}}/{{.GIT_SUBFOLDER_PATH}} {{.DESTINATION_PATH}}
+      - rsync -vazC {{.GIT_CLONE_PATH}}/{{.GIT_SUBFOLDER_PATH}} {{.DESTINATION_PATH}}
     sources:
       - "{{.GIT_CLONE_PATH}}"
     generates:
