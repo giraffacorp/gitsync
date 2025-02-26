@@ -18,10 +18,12 @@ tasks:
     cmds:
       - ssh-keyscan {{.GIT_HOST}} >> {{.SSH_DIR}}/known_hosts
       - printf "Host {{.GIT_HOST}}\n  IdentityFile {{.SSH_DIR}}/id_git\n" > {{.SSH_DIR}}/config
-      - chmod 600 {{.SSH_DIR}}/{config,id_git}
+      - chmod 600 {{.SSH_DIR}}/config
     generates:
       - "{{.SSH_DIR}}/known_hosts"
       - "{{.SSH_DIR}}/config"
+    status:
+      - test -f "{{.SSH_DIR}}/known_hosts"
     preconditions:
       - test -n "{{.SSH_DIR}}/id_git"
 
