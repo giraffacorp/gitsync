@@ -33,6 +33,8 @@ tasks:
     deps: [ssh]
     cmds:
       - git clone --depth 1 -b {{.GIT_BRANCH}} {{.GIT_REPO_URL}} {{.PROJECT_DIR}}
+    status:
+      - test -d "{{.PROJECT_DIR}}"
     generates:
       - "{{.PROJECT_DIR}}"
     preconditions:
