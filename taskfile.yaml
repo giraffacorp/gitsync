@@ -5,7 +5,7 @@ version: "3"
 silent: true
 
 vars:
-  PROJECT_DIR: "/app/repo"
+  GIT_CLONE_PATH: "/app/repo"
   SSH_DIR: "/root/.ssh"
   DESTINATION_PATH: "/sync"
   
@@ -32,11 +32,11 @@ tasks:
     desc: initial repository clone
     deps: [ssh]
     cmds:
-      - git clone --depth 1 -b {{.GIT_BRANCH}} {{.GIT_REPO_URL}} {{.PROJECT_DIR}}
+      - git clone --depth 1 -b {{.GIT_BRANCH}} {{.GIT_REPO_URL}} {{.GIT_CLONE_PATH}}
     status:
-      - test -d "{{.PROJECT_DIR}}"
+      - test -d "{{.GIT_CLONE_PATH}}"
     generates:
-      - "{{.PROJECT_DIR}}"
+      - "{{.GIT_CLONE_PATH}}"
     preconditions:
       - test -n "{{.GIT_REPO_URL}}"
 
@@ -44,11 +44,11 @@ tasks:
   sync:
     desc: single sync
     cmds:
-      - git -C {{.PROJECT_DIR}} pull origin {{.GIT_BRANCH}}
-      - git -C {{.PROJECT_DIR}} reset --hard origin/{{.GIT_BRANCH}}
-      - rsync -vazC --delete {{.PROJECT_DIR}}/{{.GIT_SUBFOLDER_PATH}} {{.DESTINATION_PATH}}
+      - git -C {{.GIT_CLONE_PATH}} pull origin {{.GIT_BRANCH}}
+      - git -C {{.GIT_CLONE_PATH}} reset --hard origin/{{.GIT_BRANCH}}
+      - rsync -vazC --delete {{.GIT_CLONE_PATH}}/{{.GIT_SUBFOLDER_PATH}} {{.DESTINATION_PATH}}
     sources:
-      - "{{.PROJECT_DIR}}"
+      - "{{.GIT_CLONE_PATH}}"
     generates:
       - "{{.DESTINATION_PATH}}"
 
