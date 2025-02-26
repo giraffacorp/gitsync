@@ -30,3 +30,10 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ vars.DOCKERHUB_USERNAME }}/gitsync:latest,${{ vars.DOCKERHUB_USERNAME }}/gitsync:${{ github.event.release.tag_name }}
+
+      - name: Set DockerHub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ${{ vars.DOCKERHUB_USERNAME }}/gitsync
