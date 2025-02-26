@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+silent: true
+
+vars:
+  PROJECT_DIR: "/app/repo"
+  SSH_DIR: "/root/.ssh"
+  DESTINATION_PATH: "/sync"
+  
+
+tasks:
+  default: go-task --list
+
+  ssh:
+    desc: configure ssh environment
+    cmds:
+      - ssh-keyscan {{.GIT_HOST}} >> {{.SSH_DIR}}/known_hosts
+      - printf "Host {{.GIT_HOST}}\n  IdentityFile {{.SSH_DIR}}/id_git\n" > {{.SSH_DIR}}/config
+      - chmod 600 {{.SSH_DIR}}/{config,id_git}
+    generates:
+      - "{{.SSH_DIR}}/known_hosts"
+      - "{{.SSH_DIR}}/config"
+    preconditions:
+      - test -n "{{.SSH_DIR}}/id_git"
+
+
+  clone:
+    desc: initial repository clone
+    deps: [ssh]
+    cmds:
+      - git clone --depth 1 -b {{.GIT_BRANCH}} {{.GIT_REPO_URL}} {{.PROJECT_DIR}}
+    generates:
+      - "{{.PROJECT_DIR}}"
+    preconditions:
+      - test -n "{{.GIT_REPO_URL}}"
+
+
+  sync:
+    desc: single sync
+    cmds:
+      - git -C {{.PROJECT_DIR}} pull origin {{.GIT_BRANCH}}
+      - git -C {{.PROJECT_DIR}} reset --hard origin/{{.GIT_BRANCH}}
+      - rsync -vazC --delete {{.PROJECT_DIR}}/{{.GIT_SUBFOLDER_PATH}} {{.DESTINATION_PATH}}
+    sources:
+      - "{{.PROJECT_DIR}}"
+    generates:
+      - "{{.DESTINATION_PATH}}"
+
+
+  watch:
+    desc: continuous sync
+    cmds:
+      - task: clone
+      - task: sync
+      - while :; do
+          sleep {{.SYNC_INTERVAL}};
+          go-task sync;
+        done
