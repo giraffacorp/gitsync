@@ -43,7 +43,7 @@ Mount either:
    ```shell
    -v $HOME/.ssh/id_rsa:/ssh/id_git:ro
    ```
-> [!INFO]  
+> [!NOTE]  
 > Always mount SSH keys as read-only volumes
 
 ## Configuration Parameters
