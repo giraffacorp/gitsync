@@ -1,0 +1,89 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  SSH_DIR: "/root/.ssh"
+  GIT_HOST: "{{env \"GIT_HOST\" | default \"github.com\"}}"
+  GIT_SECRET_KEY: "{{env \"GIT_SECRET_KEY\"}}"
+
+tasks:
+  setup:
+    desc: Set up SSH configuration based on available options
+    cmds:
+      - task: ssh-dir
+      - task: ssh-key-setup
+      - task: ssh-conf
+
+  ssh-dir:
+    desc: create ssh directory with proper permissions
+    internal: true
+    cmds:
+      - mkdir -p {{.SSH_DIR}}
+      - chmod 700 {{.SSH_DIR}}
+    status:
+      - test -d "{{.SSH_DIR}}"
+
+  ssh-key-setup:
+    desc: configure ssh key based on available options
+    internal: true
+    cmds:
+      - task: ssh-key-from-env
+      - task: ssh-key-from-mount
+      - task: ssh-dir-from-mount
+    preconditions:
+      - sh: '[ -n "$GIT_SECRET_KEY" ] || [ -e "/ssh/id_git" ] || [ -d "/ssh" ]'
+        msg: "No SSH key source available. Set GIT_SECRET_KEY or mount keys to /ssh"
+
+  ssh-key-from-env:
+    desc: create ssh key from GIT_SECRET_KEY environment variable
+    internal: true
+    cmds:
+      - |
+        if [[ "$(echo "{{.GIT_SECRET_KEY}}" | base64 -d 2>/dev/null | head -c 20)" == "-----BEGIN "* ]]; then
+          echo "{{.GIT_SECRET_KEY}}" | base64 -d > {{.SSH_DIR}}/id_git
+        else
+          echo -e "{{.GIT_SECRET_KEY}}" > {{.SSH_DIR}}/id_git
+        fi
+      - chmod 600 {{.SSH_DIR}}/id_git
+    status:
+      - >
+        test -z "$GIT_SECRET_KEY" || 
+        test -f "{{.SSH_DIR}}/id_git"
+
+  ssh-key-from-mount:
+    desc: copy ssh key from mounted file
+    internal: true
+    cmds:
+      - cp /ssh/id_git {{.SSH_DIR}}/id_git
+      - chmod 600 {{.SSH_DIR}}/id_git
+    status:
+      - >
+        test ! -e "/ssh/id_git" || 
+        test -f "{{.SSH_DIR}}/id_git"
+
+  ssh-dir-from-mount:
+    desc: copy ssh directory from mounted directory
+    internal: true
+    cmds:
+      - rsync -av /ssh/ {{.SSH_DIR}}/
+      - chmod -R 600 {{.SSH_DIR}}/*
+      - chmod 700 {{.SSH_DIR}}
+    status:
+      - >
+        test ! -d "/ssh" || 
+        test -f "{{.SSH_DIR}}/id_git" || 
+        test -f "{{.SSH_DIR}}/config" || 
+        test -f "{{.SSH_DIR}}/known_hosts"
+
+  ssh-conf:
+    desc: configure ssh known_hosts and config
+    internal: true
+    cmds:
+      - ssh-keyscan {{.GIT_HOST}} >> {{.SSH_DIR}}/known_hosts
+      - printf "Host {{.GIT_HOST}}\n  IdentityFile {{.SSH_DIR}}/id_git\n  StrictHostKeyChecking yes\n" > {{.SSH_DIR}}/config
+      - chmod 600 {{.SSH_DIR}}/known_hosts {{.SSH_DIR}}/config
+    status:
+      - >
+        test -f "{{.SSH_DIR}}/known_hosts" ||
+        test -f "{{.SSH_DIR}}/config"

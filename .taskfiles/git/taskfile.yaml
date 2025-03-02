@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  GIT_CLONE_PATH: "/app/repo"
+  DESTINATION_PATH: "/sync"
+
+  GIT_REPO_URL: "{{env \"GIT_REPO_URL\"}}"
+  GIT_SUBFOLDER_PATH: "{{env \"GIT_SUBFOLDER_PATH\"}}"
+  GIT_BRANCH: "{{env \"GIT_BRANCH\" | default \"main\"}}"
+  
+
+tasks:
+
+  clone:
+    desc: initial repository clone
+    cmds:
+      - git clone --depth 1 -b {{.GIT_BRANCH}} {{.GIT_REPO_URL}} {{.GIT_CLONE_PATH}}
+    status:
+      - test -d "{{.GIT_CLONE_PATH}}"
+    generates:
+      - "{{.GIT_CLONE_PATH}}"
+    preconditions:
+      - sh: 'test -n "{{.GIT_REPO_URL}}"'
+        msg: "No repo url available. Set GIT_REPO_URL env var"
+
+
+  sync:
+    desc: single sync
+    cmds:
+      - git -C {{.GIT_CLONE_PATH}} pull origin {{.GIT_BRANCH}}
+      - git -C {{.GIT_CLONE_PATH}} reset --hard origin/{{.GIT_BRANCH}}
+      - rsync -vazC --delete-after --exclude="*/__pycache__" {{.GIT_CLONE_PATH}}/{{.GIT_SUBFOLDER_PATH}}/ {{.DESTINATION_PATH}}/
+    sources:
+      - "{{.GIT_CLONE_PATH}}"
+    generates:
+      - "{{.DESTINATION_PATH}}"
