@@ -8,11 +8,12 @@ WORKDIR /app
 COPY . .
 
 # configure environment 
-ENV GIT_HOST="github.com" \
+ENV GIT_HOST="" \
     GIT_REPO_URL="" \
     GIT_SUBFOLDER_PATH="" \
-    GIT_BRANCH="main" \
-    SYNC_INTERVAL=10
+    GIT_SECRET_KEY="" \
+    GIT_BRANCH="" \
+    SYNC_INTERVAL=""
 
 # run task
 ENTRYPOINT ["go-task"]

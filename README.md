@@ -34,14 +34,17 @@ volumes:
 ```
 
 ## SSH Options
-Mount either:
-1. Entire SSH config
+1. Mount entire SSH dir
    ```shell
    -v $HOME/.ssh:/ssh:ro
    ```
-1. Single key
+1. Mount single key
    ```shell
    -v $HOME/.ssh/id_rsa:/ssh/id_git:ro
+   ```
+1. Set key as environment variable
+   ```shell
+   -e GIT_SECRET_KEY="$(cat $HOME/.ssh/id_rse | base64)"
    ```
 > [!NOTE]  
 > Always mount SSH keys as read-only volumes
@@ -52,6 +55,7 @@ Mount either:
 | `GIT_HOST`             | Git server hostname                  | github.com  |
 | `GIT_REPO_URL`         | SSH URL of Git repository (required) | -           |
 | `GIT_SUBFOLDER_PATH`   | Subfolder path to sync               | "" (root)   |
+| `GIT_SECRET_KEY`       | SSH key private key                  | ""          |
 | `GIT_BRANCH`           | Git branch to track                  | main        |
 | `SYNC_INTERVAL`        | Sync interval in seconds             | 10          |
 
